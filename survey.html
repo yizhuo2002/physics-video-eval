@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Physics Evaluation Study</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+  h1 { text-align: center; margin: 30px 0 10px; font-size: 1.6em; }
+  .subtitle { text-align: center; color: #666; margin-bottom: 30px; font-size: 0.95em; }
+  .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 24px; }
+  .card h2 { font-size: 1.2em; margin-bottom: 16px; color: #2c3e50; }
+  .card h3 { font-size: 1.05em; margin: 18px 0 8px; color: #34495e; }
+  .prompt-box { background: #eef6ff; border-left: 4px solid #3498db; padding: 12px 16px; border-radius: 4px; margin-bottom: 16px; font-style: italic; }
+  .video-pair { display: flex; gap: 20px; margin: 16px 0; flex-wrap: wrap; }
+  .video-cell { flex: 1; min-width: 280px; }
+  .video-cell video { width: 100%; border-radius: 6px; border: 2px solid #ddd; }
+  .video-label { text-align: center; font-weight: bold; margin-bottom: 6px; color: #555; font-size: 1.1em; }
+  .question { margin: 18px 0; }
+  .question p { font-weight: 600; margin-bottom: 8px; }
+  .options { display: flex; gap: 10px; flex-wrap: wrap; }
+  .options label { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; transition: all 0.2s; flex: 1; min-width: 120px; justify-content: center; }
+  .options label:hover { border-color: #3498db; background: #f0f7ff; }
+  .options input[type="radio"] { display: none; }
+  .options input[type="radio"]:checked + span { color: #fff; }
+  .options label:has(input:checked) { border-color: #2980b9; background: #2980b9; color: #fff; }
+  .progress-bar { width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; margin: 20px 0; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #2ecc71, #27ae60); border-radius: 4px; transition: width 0.4s; }
+  .progress-text { text-align: center; font-size: 0.9em; color: #888; margin-bottom: 10px; }
+  .btn { display: inline-block; padding: 12px 32px; border: none; border-radius: 6px; font-size: 1em; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: #2980b9; color: #fff; }
+  .btn-primary:hover { background: #2471a3; }
+  .btn-primary:disabled { background: #bbb; cursor: not-allowed; }
+  .btn-nav { margin: 0 8px; }
+  .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+  .hidden { display: none !important; }
+  .consent-list { margin: 12px 0 12px 20px; }
+  .consent-list li { margin: 6px 0; }
+  .form-group { margin: 12px 0; }
+  .form-group label { display: block; font-weight: 600; margin-bottom: 4px; }
+  .form-group select, .form-group input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; width: 100%; max-width: 400px; font-size: 0.95em; }
+  .completion-code { font-size: 1.5em; font-weight: bold; color: #27ae60; background: #eafff3; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0; letter-spacing: 2px; user-select: all; }
+  .warning { color: #e74c3c; font-size: 0.85em; margin-top: 4px; }
+  .instructions-box { background: #fff9e6; border-left: 4px solid #f39c12; padding: 12px 16px; border-radius: 4px; margin: 12px 0; }
+  @media (max-width: 650px) {
+    .video-pair { flex-direction: column; }
+    .options { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Video Physical Plausibility Evaluation</h1>
+  <p class="subtitle">National University of Singapore &mdash; CS Research Study</p>
+
+  <!-- ============ PAGE 0: CONSENT ============ -->
+  <div id="page-consent" class="card">
+    <h2>Information & Consent</h2>
+    <p>Thank you for participating in this study. You will watch pairs of AI-generated videos and judge which one better follows the laws of physics.</p>
+    <p style="color:#666; margin-top:6px;">感谢您参与本研究。您将观看多组AI生成的视频对，并判断哪个视频更符合物理规律。</p>
+    <ul class="consent-list">
+      <li><strong>Task / 任务:</strong> Compare 14 video pairs (approx. 15&ndash;20 minutes) / 比较14组视频（约15-20分钟）</li>
+      <li><strong>Data / 数据:</strong> Your choices only (anonymous) / 仅收集匿名选择结果</li>
+      <li><strong>Compensation / 报酬:</strong> As listed on the recruitment platform / 按招募平台标注发放</li>
+      <li>You may withdraw at any time / 您可随时退出</li>
+    </ul>
+
+    <div class="instructions-box">
+      <strong>What is "physical plausibility"? / 什么是"物理合理性"？</strong><br>
+      Does the motion in the video follow real-world physics? / 视频中的运动是否符合真实物理规律？<br>For example / 例如:
+      <ul style="margin: 8px 0 0 20px;">
+        <li>Objects fall downward with increasing speed (gravity) / 物体在重力下加速下落</li>
+        <li>Balls follow curved (parabolic) paths when thrown / 抛出的球沿抛物线轨迹运动</li>
+        <li>Bouncing balls lose height after each bounce (energy loss) / 弹跳球每次反弹高度递减</li>
+        <li>Pendulums swing back and forth smoothly / 钟摆来回平稳���动</li>
+        <li>Objects don't teleport, duplicate, or freeze unnaturally / 物体不会瞬移、复制或不自然地静止</li>
+      </ul>
+    </div>
+
+    <div class="form-group" style="margin-top: 20px;">
+      <label><input type="checkbox" id="consent-check"> I have read the above and agree to participate.</label>
+    </div>
+    <div class="nav-row">
+      <div></div>
+      <button class="btn btn-primary" id="btn-start" disabled onclick="startSurvey()">Begin Evaluation</button>
+    </div>
+  </div>
+
+  <!-- ============ PAGE 1: DEMOGRAPHICS ============ -->
+  <div id="page-demo" class="card hidden">
+    <h2>Background (Optional)</h2>
+    <div class="form-group">
+      <label for="demo-physics">How familiar are you with physics?</label>
+      <select id="demo-physics">
+        <option value="">-- Select --</option>
+        <option value="none">No formal training</option>
+        <option value="high-school">High-school physics</option>
+        <option value="undergrad">University-level physics or engineering</option>
+        <option value="expert">Graduate / professional in physics or related</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="demo-ai">Have you seen AI-generated videos before?</label>
+      <select id="demo-ai">
+        <option value="">-- Select --</option>
+        <option value="never">Never</option>
+        <option value="few">A few times</option>
+        <option value="often">Regularly</option>
+      </select>
+    </div>
+    <div class="nav-row">
+      <div></div>
+      <button class="btn btn-primary" onclick="startTrials()">Next &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ============ TRIAL PAGES ============ -->
+  <div id="page-trial" class="hidden">
+    <div class="progress-text" id="progress-text">Question 1 / 14</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+
+    <div class="card">
+      <h2 id="trial-title">Prompt 1</h2>
+      <div class="prompt-box" id="trial-prompt"></div>
+
+      <div class="video-pair">
+        <div class="video-cell">
+          <div class="video-label">Video A</div>
+          <video id="video-a" controls playsinline muted></video>
+        </div>
+        <div class="video-cell">
+          <div class="video-label">Video B</div>
+          <video id="video-b" controls playsinline muted></video>
+        </div>
+      </div>
+
+      <p style="color:#888; font-size:0.85em; margin: 8px 0;">Play both videos at least once before answering. You may replay as needed.<br>请至少播放两个视频各一次后再作答，可重复播放。</p>
+
+      <!-- Q1: Physics -->
+      <div class="question">
+        <p>1. Which video depicts more physically plausible motion? / 哪个视频的物理运动更真实？</p>
+        <div class="options" id="q-physics">
+          <label><input type="radio" name="physics" value="A"><span>Video A</span></label>
+          <label><input type="radio" name="physics" value="tie"><span>About the same / 差不多</span></label>
+          <label><input type="radio" name="physics" value="B"><span>Video B</span></label>
+        </div>
+      </div>
+
+      <!-- Q2: Visual quality -->
+      <div class="question">
+        <p>2. Which video has better overall visual quality? / 哪个视频的整体画面质量更好？</p>
+        <div class="options" id="q-visual">
+          <label><input type="radio" name="visual" value="A"><span>Video A</span></label>
+          <label><input type="radio" name="visual" value="tie"><span>About the same / 差不多</span></label>
+          <label><input type="radio" name="visual" value="B"><span>Video B</span></label>
+        </div>
+      </div>
+
+      <!-- Q3: Confidence -->
+      <div class="question">
+        <p>3. How confident are you in your physics judgment above? / 您对上述物理判断有多确信？</p>
+        <div class="options" id="q-confidence">
+          <label><input type="radio" name="confidence" value="low"><span>Not sure / 不确定</span></label>
+          <label><input type="radio" name="confidence" value="medium"><span>Somewhat / 比较确信</span></label>
+          <label><input type="radio" name="confidence" value="high"><span>Very confident / 非常确信</span></label>
+        </div>
+      </div>
+
+      <div id="trial-warning" class="warning hidden">Please answer all three questions before proceeding.</div>
+
+      <div class="nav-row">
+        <button class="btn btn-primary btn-nav" id="btn-prev" onclick="prevTrial()">&larr; Previous</button>
+        <button class="btn btn-primary btn-nav" id="btn-next" onclick="nextTrial()">Next &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: SUBMIT ============ -->
+  <div id="page-submit" class="card hidden">
+    <h2>Thank You!</h2>
+    <p>You have completed all 14 comparisons. Click below to submit your responses.</p>
+    <div class="form-group">
+      <label for="comments">Any comments? (optional)</label>
+      <input type="text" id="comments" placeholder="e.g., some videos were hard to distinguish...">
+    </div>
+    <div class="nav-row">
+      <div></div>
+      <button class="btn btn-primary" onclick="submitResults()">Submit &amp; Get Completion Code</button>
+    </div>
+  </div>
+
+  <!-- ============ PAGE: DONE ============ -->
+  <div id="page-done" class="card hidden">
+    <h2>Submission Complete / 提交完成</h2>
+    <p id="done-prolific-msg">Your completion code for Prolific:</p>
+    <div class="completion-code" id="completion-code">LOADING...</div>
+    <p id="done-instructions" style="text-align:center; color:#888; font-size: 0.9em;">Copy this code and paste it into Prolific to confirm your participation.<br>You may now close this page.</p>
+    <p id="done-wjx-msg" class="hidden" style="text-align:center; color:#27ae60; font-size: 1em; margin-top: 16px;">感谢参与！正在跳转回问卷星...<br>Thank you! Redirecting back to Wenjuanxing...</p>
+  </div>
+</div>
+
+<script>
+// ================================================================
+//  CONFIGURATION  — EDIT THIS SECTION
+// ================================================================
+
+// Prolific completion code (generate a random one or set via Prolific)
+const PROLIFIC_COMPLETION_CODE = "C1X8K9PH";  // Change this!
+
+// Google Sheets Web App URL for data collection (see README)
+// Deploy a Google Apps Script as web app and paste the URL here.
+const SHEETS_WEBHOOK_URL = "";  // Fill in after setting up Google Sheets
+
+// Wenjuanxing (问卷星) redirect URL after completion.
+// Set this if using 问卷星 for recruitment. Leave empty to disable.
+// Example: "https://www.wjx.cn/vm/xxxxxxx.aspx"
+const WENJUANXING_REDIRECT_URL = "";  // Fill in with your 问卷星 return URL
+
+// Trial definitions — 14 video pairs
+// video_base / video_grpo: paths relative to this HTML file
+const TRIALS = [
+  {
+    id: "pair_01", phenomenon: "bouncing",
+    prompt: "A ball bounces on a surface, each bounce lower than the last due to energy loss.\n一个球在表面弹跳，由于能量损失每次弹跳高度递减。",
+    video_base: "videos/base/bad_ball_bounce.mp4",
+    video_grpo: "videos/physgrpo/bounce_ball_sora_nice.mp4"
+  },
+  {
+    id: "pair_02", phenomenon: "rolling",
+    prompt: "A ball rolls across a glass surface.\n一个球在玻璃表面上滚动。",
+    video_base: "videos/base/ball_glasss_bad.mp4",
+    video_grpo: "videos/physgrpo/ball_glass_roll_nice.mp4"
+  },
+  {
+    id: "pair_03", phenomenon: "rolling",
+    prompt: "A ball is released at the top of a ramp and rolls down, accelerating under gravity.\n一个球从斜坡顶部释放，在重力作用下加速滚下。",
+    video_base: "videos/base/ball_ramp_bad.mp4",
+    video_grpo: "videos/physgrpo/ball_ramp_good.mp4"
+  },
+  {
+    id: "pair_04", phenomenon: "sliding",
+    prompt: "A wooden block slides down an inclined ramp under gravity.\n一个木块在重力作用下沿斜坡滑下。",
+    video_base: "videos/base/block_ramp_bad.mp4",
+    video_grpo: "videos/physgrpo/block_ramp_good.mp4"
+  },
+  {
+    id: "pair_05", phenomenon: "sliding",
+    prompt: "A block slides down a ramp onto a cloth-covered surface, decelerating due to friction.\n一个木块滑下斜坡到达布面，因摩擦力减速。",
+    video_base: "videos/base/block_ramp_cloth_bad.mp4",
+    video_grpo: "videos/physgrpo/block_ramp_cloth_good.mp4"
+  },
+  {
+    id: "pair_06", phenomenon: "sliding",
+    prompt: "A block slides down a ramp onto a tissue-covered surface, decelerating due to friction.\n一个木块滑下斜坡到达纸巾表面，因摩擦力减速。",
+    video_base: "videos/base/block_ramp_tissue_bad.mp4",
+    video_grpo: "videos/physgrpo/block_ramp_tissue_nice.mp4"
+  },
+  {
+    id: "pair_07", phenomenon: "sliding",
+    prompt: "A book slides across a surface, decelerating due to friction.\n一本书在表面上滑动，因摩擦力减速。",
+    video_base: "videos/base/book_slide_bad.mp4",
+    video_grpo: "videos/physgrpo/book_slide_good.mp4"
+  },
+  {
+    id: "pair_08", phenomenon: "bouncing",
+    prompt: "A ping-pong ball bounces on a surface repeatedly.\n一个乒乓球在表面上反复弹跳。",
+    video_base: "videos/base/bounce_pingpang_bad.mp4",
+    video_grpo: "videos/physgrpo/bounce_pingpang_nice.mp4"
+  },
+  {
+    id: "pair_09", phenomenon: "collision",
+    prompt: "A toy car rolls forward and collides with an object.\n一辆玩具车向前滚动并与物体碰撞。",
+    video_base: "videos/base/car_collide_bad.mp4",
+    video_grpo: "videos/physgrpo/car_collide_good.mp4"
+  },
+  {
+    id: "pair_10", phenomenon: "rolling",
+    prompt: "A rubber duck and a ball interact on a surface.\n一只橡皮鸭和一个球在表面上互动。",
+    video_base: "videos/base/duck_ball_bad.mp4",
+    video_grpo: "videos/physgrpo/ball_duck_good.mp4"
+  },
+  {
+    id: "pair_11", phenomenon: "freefall",
+    prompt: "A hand releases an apple, which falls under gravity.\n一只手松开苹果，苹果在重力作用下落下。",
+    video_base: "videos/base/hand_apple_bad.mp4",
+    video_grpo: "videos/physgrpo/hand_hold_apple_nice.mp4"
+  },
+  {
+    id: "pair_12", phenomenon: "pendulum",
+    prompt: "A ping-pong ball swings as a pendulum, oscillating back and forth.\n一个乒乓球作为钟摆来回摆动。",
+    video_base: "videos/base/pingpang_bad.mp4",
+    video_grpo: "videos/physgrpo/pingpang_nice.mp4"
+  },
+  {
+    id: "pair_13", phenomenon: "rolling",
+    prompt: "An orange rolls across a surface.\n一个橙子在表面上滚动。",
+    video_base: "videos/base/roll_orange_bad.mp4",
+    video_grpo: "videos/physgrpo/roll_orange_good.mp4"
+  },
+  {
+    id: "pair_14", phenomenon: "rolling",
+    prompt: "An object rotates or spins in place.\n一个物体在原地旋转。",
+    video_base: "videos/base/rotating_bad.mp4",
+    video_grpo: "videos/physgrpo/rotating_good.mp4"
+  }
+];
+
+// ================================================================
+//  STATE
+// ================================================================
+let currentTrial = 0;
+let responses = [];       // {trial_id, phenomenon, ab_order, physics, visual, confidence}
+let abOrders = [];        // randomized A/B assignment per trial
+let trialOrder = [];      // randomized trial presentation order
+let startTime = null;
+let participantId = "";
+
+// ================================================================
+//  INIT
+// ================================================================
+window.addEventListener("DOMContentLoaded", () => {
+  // Get participant ID from URL: Prolific PID, 问卷星 sojumpparm, or custom
+  const params = new URLSearchParams(window.location.search);
+  participantId = params.get("PROLIFIC_PID") || params.get("sojumpparm") || params.get("participant_id") || ("anon_" + Math.random().toString(36).slice(2, 10));
+
+  // Consent checkbox
+  document.getElementById("consent-check").addEventListener("change", (e) => {
+    document.getElementById("btn-start").disabled = !e.target.checked;
+  });
+
+  // Randomize A/B order for each trial (counterbalance position bias)
+  for (let i = 0; i < TRIALS.length; i++) {
+    abOrders.push(Math.random() < 0.5 ? "base_first" : "grpo_first");
+  }
+
+  // Randomize trial presentation order
+  trialOrder = Array.from({length: TRIALS.length}, (_, i) => i);
+  for (let i = trialOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [trialOrder[i], trialOrder[j]] = [trialOrder[j], trialOrder[i]];
+  }
+
+  // Init responses
+  responses = TRIALS.map(() => ({ physics: null, visual: null, confidence: null }));
+});
+
+function startSurvey() {
+  document.getElementById("page-consent").classList.add("hidden");
+  document.getElementById("page-demo").classList.remove("hidden");
+  startTime = Date.now();
+}
+
+function startTrials() {
+  document.getElementById("page-demo").classList.add("hidden");
+  document.getElementById("page-trial").classList.remove("hidden");
+  loadTrial(0);
+}
+
+// ================================================================
+//  TRIAL NAVIGATION
+// ================================================================
+function loadTrial(index) {
+  currentTrial = index;
+  const trialIdx = trialOrder[index];
+  const trial = TRIALS[trialIdx];
+  const order = abOrders[trialIdx];
+
+  // Update progress
+  document.getElementById("progress-text").textContent = `Question ${index + 1} / ${TRIALS.length}`;
+  document.getElementById("progress-fill").style.width = `${((index) / TRIALS.length) * 100}%`;
+
+  // Update prompt
+  document.getElementById("trial-title").textContent = `Prompt ${index + 1} — ${trial.phenomenon}`;
+  document.getElementById("trial-prompt").innerHTML = trial.prompt.replace(/\n/g, "<br>");
+
+  // Assign videos based on randomized order
+  const videoA = document.getElementById("video-a");
+  const videoB = document.getElementById("video-b");
+  if (order === "base_first") {
+    videoA.src = trial.video_base;
+    videoB.src = trial.video_grpo;
+  } else {
+    videoA.src = trial.video_grpo;
+    videoB.src = trial.video_base;
+  }
+  videoA.load();
+  videoB.load();
+
+  // Restore previous answers if any
+  const resp = responses[trialIdx];
+  clearRadios();
+  if (resp.physics) setRadio("physics", resp.physics);
+  if (resp.visual) setRadio("visual", resp.visual);
+  if (resp.confidence) setRadio("confidence", resp.confidence);
+
+  // Nav buttons
+  document.getElementById("btn-prev").style.visibility = index === 0 ? "hidden" : "visible";
+  document.getElementById("btn-next").textContent = index === TRIALS.length - 1 ? "Finish" : "Next \u2192";
+
+  document.getElementById("trial-warning").classList.add("hidden");
+}
+
+function clearRadios() {
+  document.querySelectorAll('#page-trial input[type="radio"]').forEach(r => r.checked = false);
+}
+
+function setRadio(name, value) {
+  const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (radio) radio.checked = true;
+}
+
+function getRadio(name) {
+  const checked = document.querySelector(`input[name="${name}"]:checked`);
+  return checked ? checked.value : null;
+}
+
+function saveCurrentResponse() {
+  const trialIdx = trialOrder[currentTrial];
+  const order = abOrders[trialIdx];
+  let physics = getRadio("physics");
+  let visual = getRadio("visual");
+  let confidence = getRadio("confidence");
+
+  // Map A/B back to base/grpo
+  function mapChoice(choice) {
+    if (choice === "tie") return "tie";
+    if (choice === null) return null;
+    if (order === "base_first") return choice === "A" ? "base" : "grpo";
+    else return choice === "A" ? "grpo" : "base";
+  }
+
+  responses[trialIdx] = {
+    physics: physics,         // raw A/B (for display)
+    visual: visual,
+    confidence: confidence,
+    physics_mapped: mapChoice(physics),   // decoded
+    visual_mapped: mapChoice(visual),
+  };
+}
+
+function nextTrial() {
+  // Validate
+  if (!getRadio("physics") || !getRadio("visual") || !getRadio("confidence")) {
+    document.getElementById("trial-warning").classList.remove("hidden");
+    return;
+  }
+  document.getElementById("trial-warning").classList.add("hidden");
+  saveCurrentResponse();
+
+  if (currentTrial < TRIALS.length - 1) {
+    loadTrial(currentTrial + 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } else {
+    // Show submit page
+    document.getElementById("page-trial").classList.add("hidden");
+    document.getElementById("page-submit").classList.remove("hidden");
+  }
+}
+
+function prevTrial() {
+  saveCurrentResponse();
+  if (currentTrial > 0) {
+    loadTrial(currentTrial - 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+// ================================================================
+//  SUBMISSION
+// ================================================================
+function submitResults() {
+  const duration = Math.round((Date.now() - startTime) / 1000);
+  const payload = {
+    participant_id: participantId,
+    duration_seconds: duration,
+    demographics: {
+      physics_background: document.getElementById("demo-physics").value,
+      ai_video_experience: document.getElementById("demo-ai").value,
+    },
+    comments: document.getElementById("comments").value,
+    trial_order: trialOrder.map(i => TRIALS[i].id),
+    ab_orders: trialOrder.map(i => abOrders[i]),
+    responses: trialOrder.map(i => ({
+      trial_id: TRIALS[i].id,
+      phenomenon: TRIALS[i].phenomenon,
+      ab_order: abOrders[i],
+      physics_raw: responses[i].physics,
+      physics_mapped: responses[i].physics_mapped,
+      visual_raw: responses[i].visual,
+      visual_mapped: responses[i].visual_mapped,
+      confidence: responses[i].confidence,
+    })),
+    timestamp: new Date().toISOString(),
+  };
+
+  console.log("Survey results:", JSON.stringify(payload, null, 2));
+
+  // Save to localStorage as backup
+  const allResults = JSON.parse(localStorage.getItem("survey_results") || "[]");
+  allResults.push(payload);
+  localStorage.setItem("survey_results", JSON.stringify(allResults));
+
+  // Send to Google Sheets if configured
+  if (SHEETS_WEBHOOK_URL) {
+    fetch(SHEETS_WEBHOOK_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch(err => console.warn("Webhook failed:", err));
+  }
+
+  // Show completion
+  document.getElementById("page-submit").classList.add("hidden");
+  document.getElementById("page-done").classList.remove("hidden");
+  document.getElementById("completion-code").textContent = PROLIFIC_COMPLETION_CODE;
+
+  const urlParams = new URLSearchParams(window.location.search);
+
+  // Wenjuanxing redirect
+  if (WENJUANXING_REDIRECT_URL) {
+    document.getElementById("done-prolific-msg").classList.add("hidden");
+    document.getElementById("completion-code").classList.add("hidden");
+    document.getElementById("done-instructions").classList.add("hidden");
+    document.getElementById("done-wjx-msg").classList.remove("hidden");
+    setTimeout(() => {
+      window.location.href = WENJUANXING_REDIRECT_URL;
+    }, 3000);
+  }
+  // Auto-redirect to Prolific after 5 seconds (if PROLIFIC_PID was present)
+  else if (urlParams.has("PROLIFIC_PID")) {
+    setTimeout(() => {
+      window.location.href = `https://app.prolific.com/submissions/complete?cc=${PROLIFIC_COMPLETION_CODE}`;
+    }, 5000);
+  }
+}
+</script>
+</body>
+</html>
